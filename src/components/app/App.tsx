@@ -4,9 +4,10 @@ import { Container } from "react-bootstrap";
 import { faHome } from "@fortawesome/free-solid-svg-icons"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
+
 function App() {
   return (
-    <Container>    
+    <Container>        
       <FontAwesomeIcon icon = { faHome } /> Home
     </Container>
   );
