@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import { ApiConfig } from "../config/api.config";
-
+ 
 export default function api(
     path: string,
     method: 'get' | 'post' | 'patch' | 'delete',
@@ -10,14 +10,14 @@ export default function api(
         const requestData = {            
             method: method,
             url: path,
-            baseUrl: ApiConfig.API_URL,
+            baseURL: ApiConfig.API_URL,
             data: JSON.stringify(body),
             headers:{
                 'Content-Type': 'application/json',
                 'Authorization': getToken(),
             }            
         };
-
+ 
         axios(requestData)
         .then(res => responseHandler(res, resolve))
         .catch(async err => {
@@ -25,24 +25,24 @@ export default function api(
                 // TODO: Refresh tokena i pokusati ponovo
                 //       Ne mozemo da osvezimo token, preusmeriti korisnik na login
                 if(err.response.status === 401){
-                    const newToken = refreshToken();
-
+                    const newToken = await refreshToken();
+ 
                     if(!newToken){
                         const response: ApiResponse = {
                             status: 'login',
                             data: null
                         };
-
+ 
                         return resolve(response);
                     }
-
+ 
                     saveToken(newToken);
-
+ 
                     requestData.headers['Authorization'] = getToken();
-
+ 
                     return await repeatRequest(requestData, resolve);
                 }
-
+ 
             const response: ApiResponse = {
                 status: 'error',
                 data: err,
@@ -51,36 +51,36 @@ export default function api(
         });
     });   
 }
-
+ 
 interface ApiResponse{
     status: 'ok' | 'error' | 'login';
     data: any;
-
+ 
 }
-
+ 
 async function responseHandler(
     res: AxiosResponse<any>,
-    resolve: (value?: ApiResponse) => void,    
+    resolve: (value: ApiResponse) => void,    
 ){
     // nepovoljan ishod kada server ne odradi posao
     if(res.status <200 || res.status >= 300){       
-
-        const resposne: ApiResponse = {
+ 
+        const response: ApiResponse = {
             status: 'error',
             data: res.data
         };
-
-        return resolve(resposne);
+ 
+        return resolve(response);
     }
-
+ 
     // nepovoljan ishod kada aplikacija ne odradi posao
     let response: ApiResponse = {
         status: 'ok',
         data:res.data
     };    
-
+ 
     if(res.data.statusCode < 0){
-        resposne = {
+        response = {
             status: 'login',
             data: null
         };        
@@ -90,61 +90,61 @@ async function responseHandler(
             data: res.data
         };
     }
-
+ 
     resolve(response);
 }
-
+ 
 function getToken(): string{
     const token = localStorage.getItem('api_token');
     return 'Berer ' + token;
 }
-
+ 
 function saveToken(token: string){
     localStorage.setItem('api_token', token);
 }
-
+ 
 function getRefreshToken(): string{
     const token = localStorage.getItem('api_refresh_token');
     return token + '';
 }
-
+ 
 function saveRefreshToken(token: string){
     localStorage.setItem('api_refresh_token', token);
 }
-
-async function refreshToken(): Promise<string | null>{
+ 
+async function refreshToken(): Promise<string>{
     const path = "auth/user/refresh";
     const data = {
         token: getRefreshToken()
     }
-
+ 
     const refreshTokenRequestData: AxiosRequestConfig = {            
         method: 'post',
         url: path,
-        baseUrl: ApiConfig.API_URL,
+        baseURL: ApiConfig.API_URL,
         data: JSON.stringify(data),
         headers:{
             'Content-Type': 'application/json'
         }            
     };
-
+ 
     const refreshTokenResponse: { data: { token: string | undefined } } = await axios(refreshTokenRequestData);
-
+ 
     if(!refreshTokenResponse.data.token){
-        return null;
+        return "";
     }
-
+ 
     return refreshTokenResponse.data.token;
 }
-
+ 
 async function repeatRequest(
     requestData: AxiosRequestConfig,
-    resolve: (value?: ApiResponse) => void
+    resolve: (value: ApiResponse | Promise<ApiResponse>) => void
 ) {
     axios(requestData)
     .then(res => {
         let response: ApiResponse
-
+ 
         if(res.status === 401){
             response = {
                 status: 'login',
@@ -156,7 +156,7 @@ async function repeatRequest(
                 data: res,
             };
         }
-
+ 
         return resolve(response);
     })
     .catch(err => {
