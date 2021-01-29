@@ -52,7 +52,7 @@ export default function api(
     });   
 }
  
-interface ApiResponse{
+export interface ApiResponse{
     status: 'ok' | 'error' | 'login';
     data: any;
  
@@ -99,7 +99,7 @@ function getToken(): string{
     return 'Berer ' + token;
 }
  
-function saveToken(token: string){
+export function saveToken(token: string){
     localStorage.setItem('api_token', token);
 }
  
@@ -108,7 +108,7 @@ function getRefreshToken(): string{
     return token + '';
 }
  
-function saveRefreshToken(token: string){
+export function saveRefreshToken(token: string){
     localStorage.setItem('api_refresh_token', token);
 }
  
